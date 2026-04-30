@@ -90,6 +90,8 @@ def update_state(new_state):
     global ESC_STATE
     ESC_STATE = new_state
     led(*LED_COLORS.get(ESC_STATE, (0, 0, 0)))
+    # gatts_write met à jour la valeur stockée (lue par readValue côté HTML)
+    ble.gatts_write(status_handle, bytes([ESC_STATE]))
     if ble_connected and conn_h is not None:
         ble.gatts_notify(conn_h, status_handle, bytes([ESC_STATE]))
     print("ESC →", LABELS.get(ESC_STATE, "?"))
