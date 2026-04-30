@@ -134,6 +134,16 @@
 
   /* ── Contrôle vitesse ── */
   #section-controle { display: none; }
+  #section-controle.en-attente {
+    opacity: .35;
+    pointer-events: none;
+    transition: opacity .4s;
+  }
+  #section-controle.arme {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity .4s;
+  }
 
   .toggle-mode {
     display: flex;
@@ -441,11 +451,13 @@ function setUI(connecte) {
   document.getElementById('btn-connect').disabled   = connecte;
   document.getElementById('section-wizard').style.display   = connecte ? '' : 'none';
   document.getElementById('section-controle').style.display = connecte ? '' : 'none';
-  actualiserCurseur();
+  if (connecte) setControleArme(escState === 4);
 }
 
-function actualiserCurseur() {
-  // Le slider est toujours actif — le firmware ignore les commandes si non armé
+function setControleArme(arme) {
+  const sc = document.getElementById('section-controle');
+  sc.classList.toggle('arme', arme);
+  sc.classList.toggle('en-attente', !arme);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -455,7 +467,7 @@ function onStatusChange(evt) {
   escState = evt.target.value.getUint8(0);
   mettreAJourEtapes(escState);
 
-  actualiserCurseur();
+  setControleArme(escState === 4);
 
   // Synchroniser l'affichage du slider de pré-armement selon l'état
   if (escState === 1) {
@@ -498,6 +510,9 @@ function verifierCent() {
 async function armerEtape(cmd) {
   try {
     await armChar.writeValue(new Uint8Array([cmd]));
+    // Mise à jour locale immédiate (sans attendre la notification)
+    if (cmd === 4) { escState = 4; setControleArme(true); mettreAJourEtapes(4); }
+    else if (cmd === 0) { escState = 0; setControleArme(false); mettreAJourEtapes(0); }
   } catch (err) {
     console.error('Erreur envoi ARM:', err);
   }
